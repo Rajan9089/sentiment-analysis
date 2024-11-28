@@ -1,0 +1,257 @@
+import numpy as np
+import pandas as pd
+
+
+
+df = pd.read_csv("Placement_Data_Full_Class_copy.csv")
+df.head()
+
+
+# Check for missing values and duplicates
+print(df.isnull().sum())
+print(df.duplicated().sum())
+
+
+
+# Convert categorical variables into numerical using one-hot encoding
+df = pd.get_dummies(df, 
+                    columns=['gender', 'ssc_board', 'hsc_board', 'hsc_subject', 
+                             'undergrad_degree', 'work_experience', 'specialisation', 'status'], 
+                    drop_first=True)
+
+# Convert only boolean columns to integers
+for col in df.select_dtypes(include=['bool']).columns:
+    df[col] = df[col].astype(int)
+
+
+
+
+
+# Define features and target variable
+X = df.drop(['status_Placed'],axis=1)
+y = df['status_Placed']
+print(X.shape,'\n\n',y.shape)
+
+
+
+
+from sklearn.model_selection import train_test_split
+
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=2)
+
+
+
+
+
+
+
+
+from sklearn.preprocessing import StandardScaler
+
+# Scale the features
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+
+
+
+
+#1 Preprocessing Step
+df.shape
+
+df.info()
+
+df.describe()
+
+
+
+
+
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier, plot_tree, export_text
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+
+# List of models to train
+models = {
+    'Logistic Regression': LogisticRegression(),
+    'Decision Tree': DecisionTreeClassifier(),
+    'Random Forest': RandomForestClassifier(),
+    'Support Vector Machine': SVC(),
+    'K-Nearest Neighbors': KNeighborsClassifier()
+}
+
+
+
+
+
+
+# Select only numeric columns for correlation computation
+numeric_columns = df.select_dtypes(include=['number'])
+
+# Compute the correlation matrix
+corr = numeric_columns.corr()
+corr
+
+
+
+
+df.select_dtypes(include=['number']).count
+
+
+
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.heatmap(corr,cmap='plasma',annot=True,fmt=".2f")
+
+
+
+
+
+
+
+plt.hist(df['ssc_percentage'],bins=20)
+plt.title("Distribution of SSC Percentage")
+plt.xlabel('Percentage')
+plt.ylabel('count')
+plt.show()
+
+
+
+
+
+
+
+sns.boxenplot(x='specialisation_Mkt&HR',y='degree_percentage',data=df)
+plt.title('Difference in Degree Percentage by Specialisation')
+plt.show()
+
+
+
+sns.scatterplot(x='ssc_percentage',y='hsc_percentage',data=df,hue='status_Placed')
+plt.title("Correlation bw SSC and HSC Percentage")
+plt.show()
+
+
+
+
+
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+# Train and evaluate each model
+for name, model in models.items():
+    # Train the model
+    model.fit(X_train, y_train)
+    
+    # Predict on the test set
+    y_pred = model.predict(X_test)
+    
+    # Print the results
+    print(f"Results for {name}:")
+    print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
+    # print(f"Classification Report:\n{classification_report(y_test, y_pred)}")
+    # print(f"Confusion Matrix:\n{confusion_matrix(y_test, y_pred)}\n")
+
+
+
+
+
+
+# Choose highest accurate model.
+
+rfc = RandomForestClassifier()
+rfc.fit(X_train,y_train)
+y_pred = rfc.predict(X_test)
+print(accuracy_score(y_test,y_pred))
+
+
+
+
+
+
+
+
+# Example input data (make sure this matches the order and format of X)
+# input_data = (65.00, 68.00, 64.00, 75.0, 57.80, 1, 0, 0, 1, 0, 1, 0, 0, 1)
+input_data = (62.00,58.00,53.00,89.0,60.22,1,0,1,0,1,0,0,0,1)
+
+
+# Convert the input data to a numpy array and reshape it for prediction
+input_data = np.array(input_data).reshape(1, -1)
+input_data = scaler.transform(input_data)  # Apply scaling
+
+y_pred = rfc.predict(input_data)
+
+if y_pred[0] == 1:
+    print("This person is placed for the job.")
+else:
+    print("This person is not placed for the job")
+
+
+
+
+
+
+# Fit the Decision Tree model again for visualization
+dt_model = DecisionTreeClassifier()
+dt_model.fit(X_train, y_train)
+
+# Plot the Decision Tree
+plt.figure(figsize=(40,20))
+plot_tree(dt_model, filled=True, feature_names=X.columns, class_names=['Not Placed', 'Placed'])
+plt.title('Decision Tree Visualization')
+plt.show()
+
+
+
+
+
+
+# Extract decision rules
+tree_rules = export_text(dt_model, feature_names=list(X.columns))
+print(tree_rules)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
